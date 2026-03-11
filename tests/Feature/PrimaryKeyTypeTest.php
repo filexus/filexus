@@ -210,7 +210,7 @@ describe('Primary Key Type - ULID', function () {
 
     it('creates file with ULID primary key', function () {
         // Manually create post with ULID
-        $postId = Str::ulid()->toString();
+        $postId = (string) Str::ulid();
         $post = new TestPostWithUlid(['id' => $postId, 'title' => 'Test Post']);
         $post->save();
 
@@ -237,7 +237,7 @@ describe('Primary Key Type - ULID', function () {
     });
 
     it('creates morphable relationship with ULID IDs', function () {
-        $postId = Str::ulid()->toString();
+        $postId = (string) Str::ulid();
         $post = new TestPostWithUlid(['id' => $postId, 'title' => 'Test Post']);
         $post->save();
 
@@ -251,7 +251,7 @@ describe('Primary Key Type - ULID', function () {
     });
 
     it('can retrieve fileable model with ULID', function () {
-        $postId = Str::ulid()->toString();
+        $postId = (string) Str::ulid();
         $post = new TestPostWithUlid(['id' => $postId, 'title' => 'Test Post']);
         $post->save();
 
@@ -265,7 +265,7 @@ describe('Primary Key Type - ULID', function () {
     });
 
     it('ULIDs are sortable by creation time', function () {
-        $postId = Str::ulid()->toString();
+        $postId = (string) Str::ulid();
         $post = new TestPostWithUlid(['id' => $postId, 'title' => 'Test Post']);
         $post->save();
 
@@ -325,7 +325,7 @@ describe('File Operations with Different Key Types', function () {
         recreateFilesTableWithKeyType('ulid');
         createPostsTable('ulid');
 
-        $postId = Str::ulid()->toString();
+        $postId = (string) Str::ulid();
         $post = new TestPostWithUlid(['id' => $postId, 'title' => 'Test Post']);
         $post->save();
 

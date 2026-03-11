@@ -32,7 +32,7 @@ it('validates ULID format correctly using isValidUniqueId', function () {
     $method->setAccessible(true);
 
     // Test valid ULID
-    $validUlid = Str::ulid()->toString();
+    $validUlid = (string) Str::ulid();
     expect($method->invoke($file, $validUlid))->toBeTrue();
 
     // Test invalid ULID
