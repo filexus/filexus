@@ -243,7 +243,7 @@ $posts = Post::with('files')->get();
 foreach ($posts as $post) {
     // Get all files efficiently
     $allFiles = $post->getFilesFromLoaded();
-    
+
     // Or filter by collection in memory
     $thumbnails = $post->getFilesFromLoaded('thumbnails');
     $documents = $post->getFilesFromLoaded('documents');
@@ -263,7 +263,7 @@ $users = User::with(['files' => fn($q) => $q->whereCollection('avatar')])->get()
 foreach ($users as $user) {
     // ✅ Works - avatar was eager loaded
     $avatar = $user->fileFromLoaded('avatar');
-    
+
     // ❌ Returns null - cover_photo was NOT eager loaded
     $cover = $user->fileFromLoaded('cover_photo');
 }
