@@ -81,8 +81,9 @@ class ThumbnailGenerator
                 $thumbnailFilename = "{$filename}_{$sizeName}.{$extension}";
                 $thumbnailPath = "{$directory}/thumbnails/{$thumbnailFilename}";
 
-                // Save thumbnail - v3 uses encode() with format
-                $encoded = $thumbnail->encode();
+                // Save thumbnail - v3 requires an encoder
+                $encoder = $this->getEncoder($extension);
+                $encoded = $thumbnail->encode($encoder);
                 $diskInstance->put($thumbnailPath, (string) $encoded);
 
                 $thumbnails[$sizeName] = $thumbnailPath;
@@ -127,6 +128,7 @@ class ThumbnailGenerator
     /**
      * Get the available image driver.
      *
+     * @codeCoverageIgnore
      * @return string
      */
     protected function getDriver(): string
@@ -136,13 +138,31 @@ class ThumbnailGenerator
             return 'gd';
         }
 
-        // @codeCoverageIgnoreStart
         if (extension_loaded('imagick')) {
             return 'imagick';
         }
 
         // Default to gd, will fail gracefully if not available
         return 'gd';
-        // @codeCoverageIgnoreEnd
+    }
+
+    /**
+     * Get the appropriate encoder for the given file extension.
+     *
+     * @codeCoverageIgnore
+     * @param string $extension
+     * @return \Intervention\Image\Interfaces\EncoderInterface
+     */
+    protected function getEncoder(string $extension): \Intervention\Image\Interfaces\EncoderInterface
+    {
+        return match (strtolower($extension)) {
+            'jpg', 'jpeg' => new \Intervention\Image\Encoders\JpegEncoder(quality: 90),
+            'png' => new \Intervention\Image\Encoders\PngEncoder(),
+            'gif' => new \Intervention\Image\Encoders\GifEncoder(),
+            'webp' => new \Intervention\Image\Encoders\WebpEncoder(quality: 90),
+            'avif' => new \Intervention\Image\Encoders\AvifEncoder(quality: 90),
+            'bmp' => new \Intervention\Image\Encoders\BmpEncoder(),
+            default => new \Intervention\Image\Encoders\JpegEncoder(quality: 90),
+        };
     }
 }
