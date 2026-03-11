@@ -1,0 +1,12 @@
+/vendor/
+composer.lock
+.phpunit.result.cache
+.DS_Store
+.idea/
+.vscode/
+*.log
+.phpunit.cache
+.pest
+/build/
+docs/.vitepress/dist
+docs/.vitepress/cache

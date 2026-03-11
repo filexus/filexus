@@ -1,0 +1,10 @@
+parameters:
+    paths:
+        - src
+    level: 8
+    ignoreErrors:
+        -
+            message: '#Call to an undefined static method Filexus\\Models\\File::(where|whereExpired)\(\)#'
+    excludePaths:
+        - tests/Fixtures/*
+    tmpDir: build/phpstan
