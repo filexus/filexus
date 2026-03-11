@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
  * - Storing files to disk
  * - Creating File model records
  * - Dispatching events
+ * - Generating thumbnails for images
  */
 class FileUploader
 {
@@ -28,9 +29,11 @@ class FileUploader
      * Create a new FileUploader instance.
      *
      * @param FilePathGenerator $pathGenerator
+     * @param ThumbnailGenerator $thumbnailGenerator
      */
     public function __construct(
         protected FilePathGenerator $pathGenerator,
+        protected ThumbnailGenerator $thumbnailGenerator,
     ) {
     }
 
@@ -53,23 +56,53 @@ class FileUploader
         event(new FileUploading($model, $collection, $file));
 
         $disk = config('filexus.default_disk', 'public');
-        $path = $this->pathGenerator->generate($model, $collection, $file);
+
+        // Calculate hash early for deduplication check
+        $hash = hash_file('sha256', $file->getRealPath());
+
+        // Check for deduplication
+        $deduplicate = config('filexus.deduplicate', false);
+        $existingFile = null;
+
+        if ($deduplicate) {
+            /** @var File|null $existingFile */
+            $existingFile = File::where('hash', $hash)
+                ->where('disk', $disk)
+                ->first();
+        }
 
         // Use a transaction to ensure atomicity
-        return DB::transaction(function () use ($model, $collection, $file, $disk, $path) {
-            // Store the file
-            $stored = Storage::disk($disk)->putFileAs(
-                dirname($path),
-                $file,
-                basename($path)
-            );
+        return DB::transaction(function () use ($model, $collection, $file, $disk, $hash, $existingFile, $deduplicate) {
+            $metadata = [];
+            $shouldGenerateThumbnails = false;
 
-            if (!$stored) {
-                throw FileUploadException::failedToUpload('Could not store file to disk.');
+            // If deduplication is enabled and file exists, reuse the path
+            if ($deduplicate && $existingFile) {
+                $path = $existingFile->path;
+                $metadata['deduplicated'] = true;
+                $metadata['original_file_id'] = $existingFile->id;
+
+                // Copy thumbnails from existing file if available
+                if (isset($existingFile->metadata['thumbnails'])) {
+                    $metadata['thumbnails'] = $existingFile->metadata['thumbnails'];
+                }
+            } else {
+                // Generate new path and store the file
+                $path = $this->pathGenerator->generate($model, $collection, $file);
+
+                $stored = Storage::disk($disk)->putFileAs(
+                    dirname($path),
+                    $file,
+                    basename($path)
+                );
+
+                if (!$stored) {
+                    throw FileUploadException::failedToUpload('Could not store file to disk.');
+                }
+
+                $metadata['deduplicated'] = false;
+                $shouldGenerateThumbnails = true;
             }
-
-            // Calculate hash
-            $hash = hash_file('sha256', $file->getRealPath());
 
             // Create the File model
             $fileModel = new File([
@@ -83,16 +116,55 @@ class FileUploader
                 'extension' => $file->getClientOriginalExtension(),
                 'size' => $file->getSize(),
                 'hash' => $hash,
-                'metadata' => [],
+                'metadata' => $metadata,
             ]);
 
             $fileModel->save();
+
+            // Generate thumbnails if enabled and this is a new file
+            if ($shouldGenerateThumbnails && $this->shouldGenerateThumbnails($fileModel)) {
+                $thumbnails = $this->thumbnailGenerator->generate(
+                    $disk,
+                    $path,
+                    config('filexus.thumbnail_sizes', [])
+                );
+
+                if (!empty($thumbnails)) {
+                    $metadata['thumbnails'] = $thumbnails;
+                    $fileModel->metadata = $metadata;
+                    $fileModel->save();
+                }
+            }
 
             // Dispatch the FileUploaded event
             event(new FileUploaded($model, $fileModel));
 
             return $fileModel;
         });
+    }
+
+    /**
+     * Determine if thumbnails should be generated for this file.
+     *
+     * @param File $file
+     * @return bool
+     */
+    protected function shouldGenerateThumbnails(File $file): bool
+    {
+        // Check if thumbnail generation is enabled
+        if (!config('filexus.generate_thumbnails', false)) {
+            return false;
+        }
+
+        // Check if the thumbnail generator is available
+        // @codeCoverageIgnoreStart
+        if (!$this->thumbnailGenerator->isAvailable()) {
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+
+        // Check if the file is an image
+        return $file->isImage();
     }
 
     /**

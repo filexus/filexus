@@ -199,6 +199,108 @@ $url = $file->url();
 <a href="{{ $file->url() }}" download>Download</a>
 ```
 
+### thumbnailUrls()
+
+Get URLs for all thumbnails (if they exist).
+
+```php
+public function thumbnailUrls(): array
+```
+
+**Returns:** `array<string, string>` - Array of size name => URL
+
+**Examples:**
+
+```php
+// Get all thumbnail URLs
+$thumbnails = $file->thumbnailUrls();
+// [
+//     'small' => 'https://example.com/storage/path/thumbnails/image_small.jpg',
+//     'medium' => 'https://example.com/storage/path/thumbnails/image_medium.jpg',
+//     'large' => 'https://example.com/storage/path/thumbnails/image_large.jpg',
+// ]
+
+// Loop through thumbnails
+foreach ($file->thumbnailUrls() as $size => $url) {
+    echo "<img src='{$url}' alt='{$size}'>";
+}
+
+// In Blade
+@foreach($file->thumbnailUrls() as $size => $url)
+    <img src="{{ $url }}" alt="{{ $size }}" class="thumb-{{ $size }}">
+@endforeach
+```
+
+**Note:** Returns empty array if thumbnails don't exist or thumbnail generation is disabled.
+
+### thumbnailUrl()
+
+Get URL for a specific thumbnail size.
+
+```php
+public function thumbnailUrl(string $size): ?string
+```
+
+**Parameters:**
+- `$size` - Thumbnail size name (e.g., 'small', 'medium', 'large')
+
+**Returns:** `string|null` - URL or null if thumbnail doesn't exist
+
+**Examples:**
+
+```php
+// Get specific thumbnail
+$smallUrl = $file->thumbnailUrl('small');
+$mediumUrl = $file->thumbnailUrl('medium');
+
+// With null check
+if ($url = $file->thumbnailUrl('large')) {
+    echo "<img src='{$url}'>";
+}
+
+// With fallback
+$url = $file->thumbnailUrl('medium') ?? $file->url();
+
+// In Blade
+<img src="{{ $file->thumbnailUrl('medium') ?? $file->url() }}" alt="{{ $file->original_name }}">
+```
+
+### hasThumbnails()
+
+Check if file has any thumbnails.
+
+```php
+public function hasThumbnails(): bool
+```
+
+**Returns:** `bool` - True if thumbnails exist
+
+**Examples:**
+
+```php
+// Check before displaying
+if ($file->hasThumbnails()) {
+    echo '<picture>';
+    foreach ($file->thumbnailUrls() as $size => $url) {
+        echo "<source srcset='{$url}' media='...'>  ";
+    }
+    echo '</picture>';
+}
+
+// In Blade
+@if($file->hasThumbnails())
+    <picture>
+        <source srcset="{{ $file->thumbnailUrl('large') }}" media="(min-width: 1024px)">
+        <source srcset="{{ $file->thumbnailUrl('medium') }}" media="(min-width: 768px)">
+        <img src="{{ $file->thumbnailUrl('small') }}" alt="{{ $file->original_name }}">
+    </picture>
+@else
+    <img src="{{ $file->url() }}" alt="{{ $file->original_name }}">
+@endif
+```
+
+**See Also:** [Image Thumbnails](/advanced/thumbnails)
+
 ### path()
 
 Get the full storage path.

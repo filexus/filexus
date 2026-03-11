@@ -138,6 +138,63 @@ The class responsible for generating file storage paths.
 
 See [Custom Path Generator](/configuration/custom-path) for creating your own.
 
+### deduplicate
+
+Enable automatic file deduplication based on SHA-256 hash.
+
+```php
+'deduplicate' => false,
+```
+
+When enabled:
+- Files with identical content (same hash) share the same physical storage
+- Each model still gets its own File record
+- Physical file is only deleted when the last reference is removed
+- Saves storage space for duplicate files
+
+**Environment Variable**: `FILEXUS_DEDUPLICATE`
+
+See [File Deduplication](/advanced/deduplication) for details.
+
+### generate_thumbnails
+
+Enable automatic thumbnail generation for image uploads.
+
+```php
+'generate_thumbnails' => false,
+```
+
+**Requirements**: Requires the `intervention/image` package to be installed.
+
+```bash
+composer require intervention/image
+```
+
+**Note**: If intervention/image is not installed, thumbnail generation will be gracefully skipped without errors.
+
+See [Image Thumbnails](/advanced/thumbnails) for details.
+
+### thumbnail_sizes
+
+Define thumbnail dimensions when `generate_thumbnails` is enabled.
+
+```php
+'thumbnail_sizes' => [
+    'small' => [150, 150],
+    'medium' => [300, 300],
+    'large' => [600, 600],
+],
+```
+
+Array format: `'size_name' => [width, height]`
+
+Thumbnails are generated using Intervention Image's `fit()` method, which:
+- Crops and resizes to exact dimensions
+- Centers the crop
+- Maintains aspect ratio
+
+See [Image Thumbnails](/advanced/thumbnails) for details.
+
 ## Environment Variables
 
 Configure via `.env`:
@@ -148,6 +205,12 @@ FILEXUS_DISK=public
 
 # Primary key type (must set before migration)
 FILEXUS_PRIMARY_KEY_TYPE=id
+
+# Deduplication
+FILEXUS_DEDUPLICATE=true
+
+# Thumbnails
+FILEXUS_GENERATE_THUMBNAILS=true
 ```
 
 ## Named Collections

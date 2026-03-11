@@ -8,6 +8,7 @@ use Filexus\Commands\PruneCommand;
 use Filexus\Services\FilePathGenerator;
 use Filexus\Services\FileUploader;
 use Filexus\Services\FilePruner;
+use Filexus\Services\ThumbnailGenerator;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Support\ServiceProvider;
 
@@ -37,9 +38,14 @@ class FilexusServiceProvider extends ServiceProvider
             return new $generatorClass();
         });
 
+        $this->app->singleton(ThumbnailGenerator::class, function ($app) {
+            return new ThumbnailGenerator();
+        });
+
         $this->app->singleton(FileUploader::class, function ($app) {
             return new FileUploader(
-                $app->make(FilePathGenerator::class)
+                $app->make(FilePathGenerator::class),
+                $app->make(ThumbnailGenerator::class)
             );
         });
 
@@ -118,6 +124,7 @@ class FilexusServiceProvider extends ServiceProvider
     {
         return [
             FilePathGenerator::class,
+            ThumbnailGenerator::class,
             FileUploader::class,
             FilePruner::class,
             FilexusManager::class,

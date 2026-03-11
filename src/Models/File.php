@@ -150,6 +150,55 @@ class File extends Model
     }
 
     /**
+     * Get thumbnail URLs if thumbnails exist.
+     *
+     * @return array<string, string> Array of size => url
+     */
+    public function thumbnailUrls(): array
+    {
+        if (!isset($this->metadata['thumbnails'])) {
+            return [];
+        }
+
+        $urls = [];
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk($this->disk);
+
+        foreach ($this->metadata['thumbnails'] as $size => $path) {
+            $urls[$size] = $disk->url($path);
+        }
+
+        return $urls;
+    }
+
+    /**
+     * Get a specific thumbnail URL.
+     *
+     * @param string $size
+     * @return string|null
+     */
+    public function thumbnailUrl(string $size): ?string
+    {
+        if (!isset($this->metadata['thumbnails'][$size])) {
+            return null;
+        }
+
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk($this->disk);
+        return $disk->url($this->metadata['thumbnails'][$size]);
+    }
+
+    /**
+     * Check if thumbnails exist for this file.
+     *
+     * @return bool
+     */
+    public function hasThumbnails(): bool
+    {
+        return isset($this->metadata['thumbnails']) && !empty($this->metadata['thumbnails']);
+    }
+
+    /**
      * Get a temporary URL for the file (if supported by the disk).
      *
      * @param Carbon $expiration
@@ -335,7 +384,35 @@ class File extends Model
 
         // Automatically delete the file from storage when the model is deleted
         static::deleting(function (File $file) {
-            $file->deleteFromStorage();
+            // Check if deduplication is enabled
+            $deduplicate = config('filexus.deduplicate', false);
+
+            if ($deduplicate) {
+                // Only delete the physical file if no other File records reference it
+                $otherReferences = static::where('path', $file->path)
+                    ->where('disk', $file->disk)
+                    ->where('id', '!=', $file->id)
+                    ->exists();
+
+                if (!$otherReferences) {
+                    $file->deleteFromStorage();
+
+                    // Also delete thumbnails if present
+                    if (isset($file->metadata['thumbnails'])) {
+                        $thumbnailGenerator = app(\Filexus\Services\ThumbnailGenerator::class);
+                        $thumbnailGenerator->deleteThumbnails($file->disk, $file->metadata['thumbnails']);
+                    }
+                }
+            } else {
+                // Deduplication not enabled, always delete the physical file
+                $file->deleteFromStorage();
+
+                // Also delete thumbnails if present
+                if (isset($file->metadata['thumbnails'])) {
+                    $thumbnailGenerator = app(\Filexus\Services\ThumbnailGenerator::class);
+                    $thumbnailGenerator->deleteThumbnails($file->disk, $file->metadata['thumbnails']);
+                }
+            }
         });
     }
 }

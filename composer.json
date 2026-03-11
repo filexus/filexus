@@ -1,6 +1,6 @@
 {
   "name": "filexus/filexus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Production-ready Laravel file attachment system for Eloquent models",
   "type": "library",
   "license": "MIT",
@@ -35,6 +35,7 @@
     "illuminate/support": "^11.0|^12.0"
   },
   "require-dev": {
+    "intervention/image": "^2.7|^3.0",
     "orchestra/testbench": "^9.0|^10.0",
     "pestphp/pest": "^3.0",
     "pestphp/pest-plugin-laravel": "^3.0",
@@ -51,9 +52,9 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/pest",
-    "test-coverage": "/usr/bin/php -d pcov.enabled=1 -d pcov.directory=. vendor/bin/pest --coverage",
-    "analyse": "vendor/bin/phpstan analyse --memory-limit=512M"
+    "test": "pest --parallel",
+    "test-coverage": "pest --coverage --parallel",
+    "analyse": "phpstan analyse --memory-limit=512M"
   },
   "config": {
     "sort-packages": true,

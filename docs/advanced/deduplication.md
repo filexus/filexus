@@ -2,23 +2,82 @@
 
 Filexus automatically generates SHA-256 hashes for all uploaded files, enabling powerful deduplication strategies to save storage space and bandwidth.
 
-## How It Works
+## Automatic Deduplication
 
-Every file uploaded through Filexus gets a cryptographic hash:
+Filexus includes **built-in automatic deduplication** that can be enabled via configuration. When enabled, files with identical content (same SHA-256 hash) will automatically share the same physical storage, saving disk space.
+
+### Enable Deduplication
+
+Set in `config/filexus.php`:
+
+```php
+'deduplicate' => true,
+```
+
+Or via environment variable:
+
+```env
+FILEXUS_DEDUPLICATE=true
+```
+
+### How Automatic Deduplication Works
+
+When deduplication is enabled:
+
+1. **First Upload**: File is uploaded and stored normally
+2. **Duplicate Upload**: If a file with the same hash exists, the physical file is reused
+3. **Multiple Records**: Each model gets its own `File` record, but they share the physical file
+4. **Smart Deletion**: Physical file is only deleted when the last reference is removed
+
+**Example:**
+
+```php
+// Enable deduplication
+config(['filexus.deduplicate' => true]);
+
+// User 1 uploads a file
+$file1 = $user1->attach('avatar', $request->file('avatar'));
+
+// User 2 uploads the same file (same content)
+$file2 = $user2->attach('avatar', $request->file('avatar'));
+
+// Both records point to the same physical file
+assert($file1->path === $file2->path);
+
+// Metadata indicates deduplication
+assert($file1->metadata['deduplicated'] === false);  // Original
+assert($file2->metadata['deduplicated'] === true);   // Duplicate
+assert($file2->metadata['original_file_id'] === $file1->id);
+
+// Deleting $file2 won't delete the physical file
+// Physical file is only deleted when $file1 is also deleted
+```
+
+### Benefits
+
+- **Space Savings**: Identical files share the same storage
+- **Automatic**: No manual checks required
+- **Cross-Model**: Works across different models and collections
+- **Safe**: Reference counting prevents premature deletion
+- **Transparent**: Each model still gets its own File record
+
+### Metadata Tracking
+
+Deduplicated files include metadata:
 
 ```php
 $file = $post->attach('documents', $uploadedFile);
 
-echo $file->hash; // "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+if ($file->metadata['deduplicated'] ?? false) {
+    // This file reuses an existing physical file
+    $originalId = $file->metadata['original_file_id'];
+    echo "This file shares storage with file #{$originalId}";
+}
 ```
 
-The hash is:
-- **SHA-256**: Cryptographically secure
-- **Unique**: Nearly impossible for two different files to have the same hash
-- **Consistent**: Same file always produces the same hash
-- **Indexed**: Fast lookups in the database
-
 ## Manual Deduplication
+
+For more control, you can also implement manual deduplication strategies.
 
 ### Check Before Upload
 

@@ -94,19 +94,34 @@ FILEXUS_PRIMARY_KEY_TYPE=id
 
 ## Verify Installation
 
-Create a simple test to verify Filexus is working:
+Verify Filexus is working by testing the core functionality. Create a test model or use `php artisan tinker`:
 
 ```php
-use Filexus\Models\File;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Post; // Any model with HasFiles trait
+use Illuminate\Http\UploadedFile;
 
-// Check if File model is available
-$fileModel = new File();
+// Create a test file
+$testFile = UploadedFile::fake()->image('test.jpg');
 
-// Check if storage works
-Storage::disk('public')->put('test.txt', 'Hello Filexus');
-Storage::disk('public')->delete('test.txt');
+// Create or find a model
+$post = Post::first();
+
+// Attach the file
+$file = $post->attach('test', $testFile);
+
+// Verify the file was attached
+echo $file->original_name; // "test.jpg"
+echo $file->url();         // Full URL to the file
+
+// Retrieve the file
+$retrieved = $post->file('test');
+echo $retrieved->id === $file->id ? '✓ Working!' : '✗ Failed';
+
+// Clean up
+$post->detach('test', $file->id);
 ```
+
+If you see "✓ Working!", Filexus is properly installed and configured.
 
 ## Next Steps
 
