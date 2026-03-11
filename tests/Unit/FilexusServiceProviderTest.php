@@ -124,25 +124,3 @@ it('configureMorphKeyType handles id configuration', function () {
     // Verify it ran without error
     expect(config('filexus.primary_key_type'))->toBe('id');
 });
-it('configureMorphKeyType rethrows exceptions in non-testing environments', function () {
-    config(['filexus.primary_key_type' => 'uuid']);
-
-    // Create a mock application that returns false for runningUnitTests()
-    $mockApp = Mockery::mock(\Illuminate\Foundation\Application::class);
-    $mockApp->shouldReceive('runningUnitTests')->andReturn(false);
-
-    $provider = new \Filexus\FilexusServiceProvider($mockApp);
-    $reflection = new ReflectionClass($provider);
-    $method = $reflection->getMethod('configureMorphKeyType');
-    $method->setAccessible(true);
-
-    // This should throw an exception since we're "not in testing" and Model::morphUsingUuids() will fail
-    $exceptionThrown = false;
-    try {
-        $method->invoke($provider);
-    } catch (\Throwable $e) {
-        $exceptionThrown = true;
-    }
-
-    expect($exceptionThrown)->toBeTrue();
-});

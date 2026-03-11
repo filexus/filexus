@@ -8,7 +8,7 @@ use Filexus\Commands\PruneCommand;
 use Filexus\Services\FilePathGenerator;
 use Filexus\Services\FileUploader;
 use Filexus\Services\FilePruner;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Builder;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -102,20 +102,10 @@ class FilexusServiceProvider extends ServiceProvider
     {
         $keyType = config('filexus.primary_key_type', 'id');
 
-        try {
-            if ($keyType === 'uuid') {
-                /** @phpstan-ignore-next-line */
-                Model::morphUsingUuids();
-            } elseif ($keyType === 'ulid') {
-                /** @phpstan-ignore-next-line */
-                Model::morphUsingUlids();
-            }
-        } catch (\Throwable $e) {
-            // Silently catch exceptions during testing
-            // Model::morphUsing methods can fail in test environments
-            if (!$this->app->runningUnitTests()) {
-                throw $e;
-            }
+        if ($keyType === 'uuid') {
+            Builder::morphUsingUuids();
+        } elseif ($keyType === 'ulid') {
+            Builder::morphUsingUlids();
         }
     }
 
