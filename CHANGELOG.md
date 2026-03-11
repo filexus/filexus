@@ -4,6 +4,25 @@ All notable changes to `filexus` will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-03-11
+
+### Fixed
+- Fixed Intervention Image v3 API compatibility in ThumbnailGenerator
+  - Fixed `encode()` method to properly require `EncoderInterface` parameter
+  - Added `getEncoder()` method to return appropriate encoder based on file extension
+  - Changed intervention/image requirement from `^2.7|^3.0` to `^3.0` for API consistency
+  - Fixed test failures on prefer-lowest builds (intervention/image v2.7 incompatibility)
+
+### Added
+- Extended image format support in thumbnail generation:
+  - AVIF format support (`AvifEncoder`)
+  - BMP format support (`BmpEncoder`)
+  - Existing formats: JPEG, PNG, GIF, WebP
+
+### Changed
+- Updated PHPStan from `^1.10` to `1.12.33` for PHP 8.4 compatibility
+- Dropped Intervention Image v2 support (now requires v3.0+)
+
 ## [1.0.1] - 2026-03-11
 
 ### Added
