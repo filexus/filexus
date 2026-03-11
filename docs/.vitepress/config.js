@@ -52,6 +52,7 @@ export default defineConfig({
                     { text: "File Metadata", link: "/usage/metadata" },
                     { text: "File Expiration", link: "/usage/expiration" },
                     { text: "File Pruning", link: "/usage/pruning" },
+                    { text: "Avoiding N+1 Queries", link: "/usage/avoiding-n-plus-one" },
                 ],
             },
             {

@@ -330,3 +330,113 @@ it('throws exception when calling attachMany on single-file collection', functio
     expect(fn() => $post->attachMany('avatar', $files))
         ->toThrow(\Filexus\Exceptions\InvalidCollectionException::class);
 });
+
+it('fileFromLoaded uses eager-loaded relationship to avoid N+1', function () {
+    // Create posts with files
+    $post1 = Post::create(['title' => 'Post 1', 'content' => 'Content 1']);
+    $post2 = Post::create(['title' => 'Post 2', 'content' => 'Content 2']);
+
+    $post1->attach('thumbnail', UploadedFile::fake()->image('thumb1.jpg'));
+    $post2->attach('thumbnail', UploadedFile::fake()->image('thumb2.jpg'));
+
+    // Query with eager loading
+    $posts = Post::with(['files' => fn($q) => $q->whereCollection('thumbnail')])->get();
+
+    // Track queries
+    \Illuminate\Support\Facades\DB::enableQueryLog();
+    \Illuminate\Support\Facades\DB::getQueryLog(); // Clear log
+
+    // Access thumbnails using fileFromLoaded - should not trigger queries
+    $thumb1 = $posts[0]->fileFromLoaded('thumbnail');
+    $thumb2 = $posts[1]->fileFromLoaded('thumbnail');
+
+    expect($thumb1)->toBeInstanceOf(File::class)
+        ->and($thumb1->original_name)->toBe('thumb1.jpg')
+        ->and($thumb2)->toBeInstanceOf(File::class)
+        ->and($thumb2->original_name)->toBe('thumb2.jpg');
+
+    // Should have no additional queries since relationship was loaded
+    $queries = \Illuminate\Support\Facades\DB::getQueryLog();
+    expect($queries)->toBeEmpty();
+});
+
+it('fileFromLoaded falls back to query when relationship not loaded', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Content']);
+    $post->attach('thumbnail', UploadedFile::fake()->image('thumb.jpg'));
+
+    // Don't eager load - fileFromLoaded should still work
+    $freshPost = Post::find($post->id);
+
+    $thumbnail = $freshPost->fileFromLoaded('thumbnail');
+
+    expect($thumbnail)->toBeInstanceOf(File::class)
+        ->and($thumbnail->original_name)->toBe('thumb.jpg');
+});
+
+it('getFilesFromLoaded uses eager-loaded relationship to avoid N+1', function () {
+    // Create posts with multiple files
+    $post1 = Post::create(['title' => 'Post 1', 'content' => 'Content 1']);
+    $post2 = Post::create(['title' => 'Post 2', 'content' => 'Content 2']);
+
+    $post1->attachMany('gallery', [
+        UploadedFile::fake()->image('img1.jpg'),
+        UploadedFile::fake()->image('img2.jpg'),
+    ]);
+
+    $post2->attachMany('gallery', [
+        UploadedFile::fake()->image('img3.jpg'),
+        UploadedFile::fake()->image('img4.jpg'),
+    ]);
+
+    // Query with eager loading
+    $posts = Post::with(['files' => fn($q) => $q->whereCollection('gallery')])->get();
+
+    // Track queries
+    \Illuminate\Support\Facades\DB::enableQueryLog();
+    \Illuminate\Support\Facades\DB::getQueryLog(); // Clear log
+
+    // Access galleries using getFilesFromLoaded - should not trigger queries
+    $gallery1 = $posts[0]->getFilesFromLoaded('gallery');
+    $gallery2 = $posts[1]->getFilesFromLoaded('gallery');
+
+    expect($gallery1)->toHaveCount(2)
+        ->and($gallery2)->toHaveCount(2);
+
+    // Should have no additional queries since relationship was loaded
+    $queries = \Illuminate\Support\Facades\DB::getQueryLog();
+    expect($queries)->toBeEmpty();
+});
+
+it('getFilesFromLoaded returns all files when no collection specified', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Content']);
+
+    $post->attach('thumbnail', UploadedFile::fake()->image('thumb.jpg'));
+    $post->attachMany('gallery', [
+        UploadedFile::fake()->image('img1.jpg'),
+        UploadedFile::fake()->image('img2.jpg'),
+    ]);
+
+    // Load all files
+    $post = Post::with('files')->find($post->id);
+
+    // Get all files using getFilesFromLoaded
+    $allFiles = $post->getFilesFromLoaded();
+
+    expect($allFiles)->toHaveCount(3);
+});
+
+it('getFilesFromLoaded falls back to query when relationship not loaded', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Content']);
+
+    $post->attachMany('gallery', [
+        UploadedFile::fake()->image('img1.jpg'),
+        UploadedFile::fake()->image('img2.jpg'),
+    ]);
+
+    // Don't eager load - getFilesFromLoaded should still work
+    $freshPost = Post::find($post->id);
+
+    $gallery = $freshPost->getFilesFromLoaded('gallery');
+
+    expect($gallery)->toHaveCount(2);
+});

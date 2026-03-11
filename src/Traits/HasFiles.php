@@ -52,6 +52,28 @@ trait HasFiles
     }
 
     /**
+     * Get files from a specific collection, using eager-loaded relationships if available.
+     * This method prevents N+1 queries by checking if the 'files' relationship is already loaded.
+     *
+     * @param string|null $collection
+     * @return EloquentCollection<int, File>
+     */
+    public function getFilesFromLoaded(?string $collection = null): EloquentCollection
+    {
+        // If files relationship is loaded, filter from the collection
+        if ($this->relationLoaded('files')) {
+            if ($collection === null) {
+                return $this->files;
+            }
+
+            return $this->files->where('collection', $collection)->values();
+        }
+
+        // Otherwise, fall back to querying
+        return $this->getFiles($collection);
+    }
+
+    /**
      * Get a single file from a collection.
      * Useful for single-file collections like 'avatar' or 'thumbnail'.
      *
@@ -61,6 +83,24 @@ trait HasFiles
     public function file(string $collection): ?File
     {
         return $this->files()->whereCollection($collection)->first();
+    }
+
+    /**
+     * Get a single file from a collection, using eager-loaded relationships if available.
+     * This method prevents N+1 queries by checking if the 'files' relationship is already loaded.
+     *
+     * @param string $collection
+     * @return File|null
+     */
+    public function fileFromLoaded(string $collection): ?File
+    {
+        // If files relationship is loaded, filter from the collection
+        if ($this->relationLoaded('files')) {
+            return $this->files->where('collection', $collection)->first();
+        }
+
+        // Otherwise, fall back to querying
+        return $this->file($collection);
     }
 
     /**

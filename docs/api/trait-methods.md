@@ -81,6 +81,138 @@ if ($thumbnail = $post->file('thumbnail')) {
 $logo = $company->file('logo');
 ```
 
+### fileFromLoaded()
+
+Get the first file from a collection, using eager-loaded relationships to avoid N+1 queries.
+
+```php
+public function fileFromLoaded(string $collection): ?File
+```
+
+**Parameters:**
+- `$collection` (string): Collection name
+
+**Returns:** `File|null` - First file or null if none exist
+
+**Behavior:**
+- If the `files` relationship is already loaded, filters from the in-memory collection
+- Otherwise, falls back to querying the database (same as `file()`)
+- **Prevents N+1 queries** when used with eager loading
+
+**⚠️ Important:** If you eager load with a collection constraint, only those collections are available. Accessing a different collection will return `null` without triggering a query:
+
+```php
+// Only loads 'avatar' collection
+$users = User::with(['files' => fn($q) => $q->whereCollection('avatar')])->get();
+
+$user = $users->first();
+$avatar = $user->fileFromLoaded('avatar');     // ✅ Returns avatar (was loaded)
+$cover = $user->fileFromLoaded('cover_photo'); // ⚠️ Returns null (wasn't loaded)
+```
+
+**Examples:**
+
+```php
+// ❌ N+1 Problem: Each call to file() triggers a query
+$users = User::all();
+foreach ($users as $user) {
+    $avatar = $user->file('avatar'); // Query executed 100 times for 100 users!
+}
+
+// ✅ Solution: Eager load + fileFromLoaded()
+$users = User::with(['files' => fn($q) => $q->whereCollection('avatar')])->get();
+foreach ($users as $user) {
+    $avatar = $user->fileFromLoaded('avatar'); // No additional queries!
+}
+
+// In API Resources
+class UserResource extends JsonResource
+{
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'avatar_url' => $this->fileFromLoaded('avatar')?->url(),
+        ];
+    }
+}
+
+// In controller
+$users = User::with(['files' => fn($q) => $q->whereCollection('avatar')])->get();
+return UserResource::collection($users);
+```
+
+**When to Use:**
+- When querying multiple models (collections of models)
+- In API Resources that transform many models
+- When you've already eager loaded the files relationship
+- Any situation where you want to avoid N+1 query problems
+
+### getFilesFromLoaded()
+
+Get files from a collection, using eager-loaded relationships to avoid N+1 queries.
+
+```php
+public function getFilesFromLoaded(?string $collection = null): EloquentCollection
+```
+
+**Parameters:**
+- `$collection` (string|null): Collection name (null returns all files)
+
+**Returns:** `EloquentCollection<File>` - Collection of files
+
+**Behavior:**
+- If the `files` relationship is already loaded, filters from the in-memory collection
+- Otherwise, falls back to querying the database (same as `getFiles()`)
+- **Prevents N+1 queries** when used with eager loading
+
+**⚠️ Important:** If you eager load with a collection constraint, only those collections are available. Accessing a different collection will return an empty collection without triggering a query:
+
+```php
+// Only loads 'gallery' collection
+$posts = Post::with(['files' => fn($q) => $q->whereCollection('gallery')])->get();
+
+$post = $posts->first();
+$gallery = $post->getFilesFromLoaded('gallery');     // ✅ Returns gallery files (was loaded)
+$documents = $post->getFilesFromLoaded('documents'); // ⚠️ Returns empty collection (wasn't loaded)
+```
+
+**Examples:**
+
+```php
+// ❌ N+1 Problem: Each call to getFiles() triggers a query
+$posts = Post::all();
+foreach ($posts as $post) {
+    $images = $post->getFiles('gallery'); // Query for each post!
+}
+
+// ✅ Solution: Eager load + getFilesFromLoaded()
+$posts = Post::with(['files' => fn($q) => $q->whereCollection('gallery')])->get();
+foreach ($posts as $post) {
+    $images = $post->getFilesFromLoaded('gallery'); // No additional queries!
+}
+
+// Get all files without filtering
+$posts = Post::with('files')->get();
+foreach ($posts as $post) {
+    $allFiles = $post->getFilesFromLoaded(); // Returns all files
+}
+
+// In Blade views with eager loading
+@foreach($products->load('files') as $product)
+    @foreach($product->getFilesFromLoaded('images') as $image)
+        <img src="{{ $image->url() }}" />
+    @endforeach
+@endforeach
+```
+
+**When to Use:**
+- When querying multiple models with files
+- In loops where you're accessing files for many models
+- When you've already eager loaded the files relationship
+- Any situation where you want to avoid N+1 query problems
+
 ---
 
 ## Upload Methods

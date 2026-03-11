@@ -1,6 +1,6 @@
 {
   "name": "filexus/filexus",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Production-ready Laravel file attachment system for Eloquent models",
   "type": "library",
   "license": "MIT",

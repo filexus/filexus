@@ -4,6 +4,17 @@ All notable changes to `filexus` will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-03-11
+
+### Added
+- N+1 query prevention methods:
+  - `fileFromLoaded()` - Get single file from collection using eager-loaded relationships
+  - `getFilesFromLoaded()` - Get multiple files from collection using eager-loaded relationships
+  - Both methods prevent N+1 queries when working with multiple models
+  - Comprehensive documentation in [Avoiding N+1 Queries guide](docs/usage/avoiding-n-plus-one.md)
+  - Documented important edge case: constrained eager loading only loads specified collections
+- Test coverage for N+1 prevention methods
+
 ## [1.0.2] - 2026-03-11
 
 ### Fixed

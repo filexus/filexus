@@ -1,6 +1,6 @@
 {
   "name": "filexus-docs",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Documentation for Filexus Laravel Package",
   "type": "module",
   "scripts": {
