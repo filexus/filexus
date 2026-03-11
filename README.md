@@ -1,7 +1,7 @@
 # Filexus
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/filexus/filexus.svg?style=flat-square)](https://packagist.org/packages/filexus/filexus)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/filexus/filexus/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/filexus/filexus/actions/workflows/tests.yml)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/filexus/filexus/tests.yml?branch=master&label=tests&style=flat-square)](https://github.com/filexus/filexus/actions/workflows/tests.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/filexus/filexus.svg?style=flat-square)](https://packagist.org/packages/filexus/filexus)
 [![Code Coverage](https://img.shields.io/codecov/c/github/filexus/filexus?style=flat-square)](https://codecov.io/gh/filexus/filexus)
 
