@@ -4,6 +4,10 @@ All notable changes to `filexus` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fixed GitHub Actions test workflow compatibility with Laravel 11 by installing correct orchestra/testbench version
+- Updated composer.json to support both Laravel 11 and 12 (`^11.0|^12.0`)
+
 ## [1.0.0] - 2026-03-11
 
 ### Added

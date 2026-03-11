@@ -112,7 +112,7 @@ If you discover any security-related issues, please email manlupigjohnmichael@gm
 
 ## Credits
 
-- [John Michael Manlupig](https://manlupigjohnmichael.com)
+- [John Michael Manlupig](https://github.com/avidianity)
 - [All Contributors](https://github.com/filexus/filexus/contributors)
 
 ## License
