@@ -44,10 +44,11 @@ class FileUploader
      * @param string $collection The collection name
      * @param UploadedFile $file The uploaded file
      * @param array<string, mixed> $config Collection configuration
+     * @param array<string, mixed> $options Additional options (e.g., ['expires_at' => Carbon instance])
      * @return File The created File model
      * @throws FileUploadException
      */
-    public function upload(Model $model, string $collection, UploadedFile $file, array $config = []): File
+    public function upload(Model $model, string $collection, UploadedFile $file, array $config = [], array $options = []): File
     {
         // Validate the file
         $this->validateFile($file, $config);
@@ -72,7 +73,7 @@ class FileUploader
         }
 
         // Use a transaction to ensure atomicity
-        return DB::transaction(function () use ($model, $collection, $file, $disk, $hash, $existingFile, $deduplicate) {
+        return DB::transaction(function () use ($model, $collection, $file, $disk, $hash, $existingFile, $deduplicate, $options) {
             $metadata = [];
             $shouldGenerateThumbnails = false;
 
@@ -117,6 +118,7 @@ class FileUploader
                 'size' => $file->getSize(),
                 'hash' => $hash,
                 'metadata' => $metadata,
+                'expires_at' => $options['expires_at'] ?? null,
             ]);
 
             $fileModel->save();

@@ -91,7 +91,7 @@ Filexus follows clean architecture principles:
 
 | Filexus | Laravel | PHP  |
 | ------- | ------- | ---- |
-| 1.x     | 12+     | 8.2+ |
+| 1.x     | 11+     | 8.2+ |
 
 ## Next Steps
 

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUniqueStringIds;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 /**
  * File Model
@@ -371,6 +372,30 @@ class File extends Model
     {
         $keyType = config('filexus.primary_key_type', 'id');
         return in_array($keyType, ['uuid', 'ulid']) ? 'string' : 'int';
+    }
+
+    /**
+     * Get the number of references to this file (based on hash).
+     * Useful when deduplication is enabled.
+     *
+     * @return Attribute
+     */
+    protected function referenceCount(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => static::where('hash', $this->hash)->count(),
+        );
+    }
+
+    /**
+     * Check if this is the last reference to the file.
+     * Returns true if this is the only File record with this hash.
+     *
+     * @return bool
+     */
+    public function isLastReference(): bool
+    {
+        return $this->reference_count === 1;
     }
 
     /**

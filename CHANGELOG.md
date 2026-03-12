@@ -4,6 +4,24 @@ All notable changes to `filexus` will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-03-12
+
+### Added
+- Options parameter support for file upload methods:
+  - `attach()` now accepts optional third parameter for upload options
+  - `attachMany()` now accepts optional third parameter for upload options
+  - `replace()` now accepts optional third parameter for upload options
+  - Current option: `expires_at` - Set expiration date during upload
+  - Example: `$file = $post->attach('temp', $upload, ['expires_at' => now()->addDays(7)])`
+- Deduplication helper methods on File model:
+  - `reference_count` - Accessor to get number of File records with same hash
+  - `isLastReference()` - Check if this is the last File record referencing a physical file
+  - Useful for optimizing storage and understanding deduplication impact
+
+### Changed
+- Improved file expiration workflow - expiration can now be set during upload instead of requiring separate save
+- Enhanced documentation for file expiration with clearer examples
+
 ## [1.0.3] - 2026-03-11
 
 ### Added

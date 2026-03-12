@@ -4,19 +4,58 @@ Set expiration dates on files for automatic cleanup with the prune command.
 
 ## Setting Expiration
 
-### During Upload
+### During Upload (Recommended)
+
+The easiest way to set expiration is during the file upload by passing the `expires_at` option:
 
 ```php
-$file = $post->attach('temporary_download', $uploadedFile);
-$file->expires_at = now()->addDays(7);
-$file->save();
+use Carbon\Carbon;
+
+// Expire in 7 days
+$file = $post->attach('temporary_download', $uploadedFile, [
+    'expires_at' => now()->addDays(7)
+]);
+
+// Expire in 24 hours
+$file = $user->attach('session_files', $uploadedFile, [
+    'expires_at' => Carbon::now()->addHours(24)
+]);
+
+// Expire at specific date and time
+$file = $post->attach('limited_offer', $uploadedFile, [
+    'expires_at' => Carbon::parse('2026-12-31 23:59:59')
+]);
+```
+
+### Multiple Files with Expiration
+
+```php
+// All files will have the same expiration
+$files = $post->attachMany('temporary_images', [
+    $request->file('image1'),
+    $request->file('image2'),
+    $request->file('image3'),
+], [
+    'expires_at' => now()->addDays(30)
+]);
+```
+
+### Replace with Expiration
+
+```php
+// Replace file and set expiration
+$file = $post->replace('thumbnail', $newImage, [
+    'expires_at' => now()->addMonths(3)
+]);
 ```
 
 ### After Upload
 
+You can also set expiration after the file has been uploaded:
+
 ```php
-$file = File::find($fileId);
-$file->expires_at = now()->addHours(24);
+$file = $post->attach('temporary_download', $uploadedFile);
+$file->expires_at = now()->addDays(7);
 $file->save();
 ```
 

@@ -27,11 +27,18 @@ trait HasFiles
     /**
      * Get all files attached to this model.
      *
+     * @param string|null $collection
      * @return MorphMany
      */
-    public function files(): MorphMany
+    public function files(?string $collection = null): MorphMany
     {
-        return $this->morphMany(File::class, 'fileable');
+        $builder = $this->morphMany(File::class, 'fileable');
+
+        if($collection) {
+            $builder->whereCollection($collection);
+        }
+
+        return $builder;
     }
 
     /**
@@ -108,10 +115,11 @@ trait HasFiles
      *
      * @param string $collection
      * @param UploadedFile $file
+     * @param array<string, mixed> $options Additional options (e.g., ['expires_at' => Carbon instance])
      * @return File
      * @throws InvalidCollectionException
      */
-    public function attach(string $collection, UploadedFile $file): File
+    public function attach(string $collection, UploadedFile $file, array $options = []): File
     {
         $config = $this->getCollectionConfig($collection);
 
@@ -127,7 +135,7 @@ trait HasFiles
         /** @var FileUploader $uploader */
         $uploader = App::make(FileUploader::class);
 
-        return $uploader->upload($this, $collection, $file, $config);
+        return $uploader->upload($this, $collection, $file, $config, $options);
     }
 
     /**
@@ -135,10 +143,11 @@ trait HasFiles
      *
      * @param string $collection
      * @param array<int, UploadedFile> $files
+     * @param array<string, mixed> $options Additional options (e.g., ['expires_at' => Carbon instance])
      * @return EloquentCollection<int, File>
      * @throws InvalidCollectionException
      */
-    public function attachMany(string $collection, array $files): EloquentCollection
+    public function attachMany(string $collection, array $files, array $options = []): EloquentCollection
     {
         $config = $this->getCollectionConfig($collection);
 
@@ -154,7 +163,7 @@ trait HasFiles
 
         foreach ($files as $file) {
             $uploadedFiles->push(
-                $uploader->upload($this, $collection, $file, $config)
+                $uploader->upload($this, $collection, $file, $config, $options)
             );
         }
 
@@ -167,9 +176,10 @@ trait HasFiles
      *
      * @param string $collection
      * @param UploadedFile $file
+     * @param array<string, mixed> $options Additional options (e.g., ['expires_at' => Carbon instance])
      * @return File
      */
-    public function replace(string $collection, UploadedFile $file): File
+    public function replace(string $collection, UploadedFile $file, array $options = []): File
     {
         // Get and delete existing file(s)
         $existingFiles = $this->getFiles($collection);
@@ -183,7 +193,7 @@ trait HasFiles
         /** @var FileUploader $uploader */
         $uploader = App::make(FileUploader::class);
 
-        return $uploader->upload($this, $collection, $file, $config);
+        return $uploader->upload($this, $collection, $file, $config, $options);
     }
 
     /**

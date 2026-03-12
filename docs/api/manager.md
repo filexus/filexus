@@ -20,16 +20,18 @@ Upload a file to a model.
 public function upload(
     Model $model,
     string $collection,
-    UploadedFile|string $file,
-    ?array $metadata = null
+    UploadedFile $file,
+    array $config = [],
+    array $options = []
 ): File
 ```
 
 **Parameters:**
 - `$model` (Model): Parent model
 - `$collection` (string): Collection name
-- `$file` (UploadedFile|string): File to upload
-- `$metadata` (array|null): Optional custom metadata
+- `$file` (UploadedFile): File to upload
+- `$config` (array): Collection configuration
+- `$options` (array): Upload options (e.g., ['expires_at' => Carbon instance])
 
 **Returns:** `File` - Created file model
 
@@ -40,38 +42,24 @@ use Filexus\FilexusManager;
 
 $manager = app(FilexusManager::class);
 
+// Basic upload
 $file = $manager->upload(
     $post,
     'gallery',
-    $request->file('image'),
-    ['uploaded_by' => auth()->id()]
+    $request->file('image')
+);
+
+// With expiration
+$file = $manager->upload(
+    $user,
+    'temp_files',
+    $request->file('document'),
+    [],
+    ['expires_at' => now()->addDays(7)]
 );
 ```
 
-### delete()
-
-Delete a file.
-
-```php
-public function delete(File $file): bool
-```
-
-**Parameters:**
-- `$file` (File): File to delete
-
-**Returns:** `bool` - True if deleted
-
-**Behavior:**
-- Removes file from disk storage
-- Deletes database record
-- Dispatches `FileDeleted` event
-
-**Example:**
-
-```php
-$file = File::find($id);
-$manager->delete($file);
-```
+**Note:** Most of the time, you'll use the `attach()` method on your model instead of calling the manager directly. The manager is useful for advanced scenarios or when you need more control.
 
 ---
 
@@ -112,6 +100,29 @@ public function pruneOrphaned(int $hoursOld = 24): int
 ```php
 // Delete orphans older than 48 hours
 $count = $manager->pruneOrphaned(48);
+```
+
+### pruneAll()
+
+Prune both expired and orphaned files.
+
+```php
+public function pruneAll(): array
+```
+
+**Returns:** `array` - Statistics with keys:
+- `expired` (int): Number of expired files deleted
+- `orphaned` (int): Number of orphaned files deleted
+- `total` (int): Total files deleted
+
+**Example:**
+
+```php
+$result = $manager->pruneAll();
+
+echo "Expired files deleted: {$result['expired']}";
+echo "Orphaned files deleted: {$result['orphaned']}";
+echo "Total files deleted: {$result['total']}";
 ```
 
 ### getPruneStatistics()

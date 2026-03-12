@@ -10,6 +10,11 @@ Attach a file to a collection:
 
 ```php
 $file = $model->attach('collection_name', $uploadedFile);
+
+// With options (e.g., expiration)
+$file = $model->attach('collection_name', $uploadedFile, [
+    'expires_at' => now()->addDays(7)
+]);
 ```
 
 **Example:**
@@ -22,6 +27,11 @@ $file = $post->attach('thumbnail', $request->file('image'));
 echo $file->id;
 echo $file->original_name;
 echo $file->url();
+
+// Attach with expiration
+$tempFile = $post->attach('temporary', $request->file('temp'), [
+    'expires_at' => now()->addHours(24)
+]);
 ```
 
 ### Multiple Files
@@ -30,6 +40,11 @@ Attach multiple files at once:
 
 ```php
 $files = $model->attachMany('collection_name', $uploadedFiles);
+
+// With options
+$files = $model->attachMany('collection_name', $uploadedFiles, [
+    'expires_at' => now()->addDays(30)
+]);
 ```
 
 **Example:**
@@ -40,6 +55,11 @@ $files = $post->attachMany('gallery', $request->file('images'));
 foreach ($files as $file) {
     echo $file->original_name . '<br>';
 }
+
+// Attach multiple files with expiration
+$temporaryFiles = $user->attachMany('temp_uploads', $request->file('files'), [
+    'expires_at' => now()->addWeek()
+]);
 ```
 
 ### With Progress Tracking

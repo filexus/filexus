@@ -37,11 +37,12 @@ class FilexusManager
      * @param string $collection
      * @param UploadedFile $file
      * @param array<string, mixed> $config
+     * @param array<string, mixed> $options
      * @return File
      */
-    public function upload(Model $model, string $collection, UploadedFile $file, array $config = []): File
+    public function upload(Model $model, string $collection, UploadedFile $file, array $config = [], array $options = []): File
     {
-        return $this->uploader->upload($model, $collection, $file, $config);
+        return $this->uploader->upload($model, $collection, $file, $config, $options);
     }
 
     /**

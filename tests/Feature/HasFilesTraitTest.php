@@ -440,3 +440,117 @@ it('getFilesFromLoaded falls back to query when relationship not loaded', functi
 
     expect($gallery)->toHaveCount(2);
 });
+
+it('can attach a file with expires_at option', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Test content']);
+
+    $file = UploadedFile::fake()->image('photo.jpg');
+    $expiresAt = now()->addDays(7);
+
+    $attachedFile = $post->attach('gallery', $file, ['expires_at' => $expiresAt]);
+
+    expect($attachedFile)->toBeInstanceOf(File::class)
+        ->and($attachedFile->expires_at)->not->toBeNull()
+        ->and($attachedFile->expires_at->timestamp)->toBe($expiresAt->timestamp);
+});
+
+it('can attach multiple files with expires_at option', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Test content']);
+
+    $files = [
+        UploadedFile::fake()->image('photo1.jpg'),
+        UploadedFile::fake()->image('photo2.jpg'),
+        UploadedFile::fake()->image('photo3.jpg'),
+    ];
+
+    $expiresAt = now()->addHours(24);
+
+    $attachedFiles = $post->attachMany('gallery', $files, ['expires_at' => $expiresAt]);
+
+    expect($attachedFiles)->toHaveCount(3);
+
+    foreach ($attachedFiles as $file) {
+        expect($file->expires_at)->not->toBeNull()
+            ->and($file->expires_at->timestamp)->toBe($expiresAt->timestamp);
+    }
+});
+
+it('can replace a file with expires_at option', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Test content']);
+
+    $oldFile = UploadedFile::fake()->image('old.jpg');
+    $newFile = UploadedFile::fake()->image('new.jpg');
+    $expiresAt = now()->addDays(3);
+
+    $post->attach('thumbnail', $oldFile);
+    $replacedFile = $post->replace('thumbnail', $newFile, ['expires_at' => $expiresAt]);
+
+    expect($replacedFile->expires_at)->not->toBeNull()
+        ->and($replacedFile->expires_at->timestamp)->toBe($expiresAt->timestamp);
+});
+
+it('can attach a file without expires_at option', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Test content']);
+
+    $file = UploadedFile::fake()->image('photo.jpg');
+
+    $attachedFile = $post->attach('gallery', $file, []);
+
+    expect($attachedFile->expires_at)->toBeNull();
+});
+
+it('isLastReference returns true for single file with unique hash', function () {
+    $post = Post::create(['title' => 'Test Post', 'content' => 'Test content']);
+
+    $file = UploadedFile::fake()->image('photo.jpg');
+    $attachedFile = $post->attach('gallery', $file);
+
+    expect($attachedFile->isLastReference())->toBeTrue()
+        ->and($attachedFile->reference_count)->toBe(1);
+});
+
+it('isLastReference returns false when multiple files share same hash', function () {
+    config(['filexus.deduplicate' => true]);
+
+    $post1 = Post::create(['title' => 'Post 1', 'content' => 'Content 1']);
+    $post2 = Post::create(['title' => 'Post 2', 'content' => 'Content 2']);
+
+    // Upload same file content
+    $file1 = UploadedFile::fake()->image('photo.jpg');
+    $file2 = UploadedFile::fake()->image('photo.jpg');
+
+    $attachedFile1 = $post1->attach('gallery', $file1);
+    $attachedFile2 = $post2->attach('gallery', $file2);
+
+    // Both files should have the same hash due to deduplication
+    expect($attachedFile1->hash)->toBe($attachedFile2->hash);
+
+    // Neither should be the last reference
+    expect($attachedFile1->isLastReference())->toBeFalse()
+        ->and($attachedFile2->isLastReference())->toBeFalse()
+        ->and($attachedFile1->reference_count)->toBe(2)
+        ->and($attachedFile2->reference_count)->toBe(2);
+});
+
+it('reference_count attribute returns correct count', function () {
+    $post1 = Post::create(['title' => 'Post 1', 'content' => 'Content 1']);
+    $post2 = Post::create(['title' => 'Post 2', 'content' => 'Content 2']);
+    $post3 = Post::create(['title' => 'Post 3', 'content' => 'Content 3']);
+
+    $file1 = UploadedFile::fake()->image('photo.jpg');
+    $file2 = UploadedFile::fake()->image('photo.jpg');
+    $file3 = UploadedFile::fake()->image('photo.jpg');
+
+    $attachedFile1 = $post1->attach('gallery', $file1);
+    $attachedFile2 = $post2->attach('gallery', $file2);
+    $attachedFile3 = $post3->attach('gallery', $file3);
+
+    // All files have the same hash (same content)
+    expect($attachedFile1->hash)->toBe($attachedFile2->hash)
+        ->and($attachedFile2->hash)->toBe($attachedFile3->hash);
+
+    // All should report reference count of 3
+    expect($attachedFile1->reference_count)->toBe(3)
+        ->and($attachedFile2->reference_count)->toBe(3)
+        ->and($attachedFile3->reference_count)->toBe(3);
+});

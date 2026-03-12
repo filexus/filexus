@@ -501,6 +501,113 @@ public function isNotExpired(): bool
 
 ---
 
+## Deduplication Methods
+
+### reference_count
+
+Get the number of file records that share the same hash.
+
+```php
+public function getReferenceCountAttribute(): int
+```
+
+**Returns:** `int` - Number of File records with the same hash
+
+**Usage:**
+
+```php
+$count = $file->reference_count;
+```
+
+**Examples:**
+
+```php
+// Check how many times this file content is referenced
+$file = File::find(1);
+echo "This file is referenced {$file->reference_count} times";
+
+// When deduplication is enabled
+config(['filexus.deduplicate' => true]);
+
+$file1 = $post1->attach('image', $uploadedFile1);
+$file2 = $post2->attach('image', $uploadedFile2); // Same content
+
+echo $file1->reference_count; // 2
+echo $file2->reference_count; // 2
+```
+
+**Use Cases:**
+- Check if deleting this record would delete the physical file
+- Determine deduplication savings
+- Show storage optimization metrics
+
+### isLastReference()
+
+Check if this is the last File record referencing this physical file.
+
+```php
+public function isLastReference(): bool
+```
+
+**Returns:** `bool` - True if only one File record has this hash
+
+**Examples:**
+
+```php
+// Check before deleting
+if ($file->isLastReference()) {
+    // This deletion will remove the physical file
+    Log::info("Deleting last reference to {$file->path}");
+} else {
+    // Physical file will remain (other records reference it)
+    Log::info("Deleting reference, physical file preserved");
+}
+
+$file->delete();
+
+// Safe deletion check
+if (!$file->isLastReference()) {
+    // Safe to delete - other records still reference this file
+    $file->delete();
+}
+
+// In a cleanup command
+foreach (File::whereExpired()->get() as $file) {
+    if ($file->isLastReference()) {
+        echo "Will delete physical file: {$file->path}";
+    }
+    $file->delete();
+}
+```
+
+**Relationship to Deduplication:**
+
+When deduplication is enabled, multiple File records may share the same physical file:
+
+```php
+config(['filexus.deduplicate' => true]);
+
+// Upload same file twice
+$file1 = $user1->attach('avatar', $photo);
+$file2 = $user2->attach('avatar', $photo); // Same content
+
+$file1->isLastReference(); // false (2 references)
+$file2->isLastReference(); // false (2 references)
+$file1->reference_count;   // 2
+$file2->reference_count;   // 2
+
+// Delete first one
+$file1->delete();
+
+// Now file2 is the last reference
+$file2->isLastReference(); // true (1 reference)
+$file2->reference_count;   // 1
+```
+
+**Note:** The File model's `deleting` event automatically handles reference counting to prevent premature deletion of physical files when deduplication is enabled.
+
+---
+
 ## Query Scopes
 
 ### whereCollection()

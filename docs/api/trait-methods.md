@@ -224,17 +224,23 @@ Attach a file to the model.
 ```php
 public function attach(
     string $collection,
-    UploadedFile|string $file,
-    ?array $metadata = null
+    UploadedFile $file,
+    array $options = []
 ): File
 ```
 
 **Parameters:**
 - `$collection` (string): Collection name
-- `$file` (UploadedFile|string): Uploaded file or path
-- `$metadata` (array|null): Optional custom metadata
+- `$file` (UploadedFile): Uploaded file
+- `$options` (array): Optional upload options
+
+**Options:**
+- `expires_at` (Carbon|string|null): Expiration date/time for the file
 
 **Returns:** `File` - Created file model
+
+**Throws:**
+- `InvalidCollectionException` - If collection doesn't allow multiple files and one already exists
 
 **Examples:**
 
@@ -242,10 +248,17 @@ public function attach(
 // Basic upload
 $file = $post->attach('images', $request->file('photo'));
 
-// With metadata
-$file = $post->attach('documents', $uploadedFile, [
-    'category' => 'invoice',
-    'year' => 2024,
+// With expiration
+$file = $post->attach('temporary', $uploadedFile, [
+    'expires_at' => now()->addDays(7)
+]);
+
+// Permanent file (no expiration)
+$file = $post->attach('documents', $uploadedFile);
+
+// With specific expiration time
+$file = $user->attach('session_files', $tempFile, [
+    'expires_at' => Carbon::parse('2026-12-31 23:59:59')
 ]);
 
 // From path
@@ -264,14 +277,17 @@ Attach multiple files at once.
 public function attachMany(
     string $collection,
     array $files,
-    ?array $metadata = null
+    array $options = []
 ): Collection
 ```
 
 **Parameters:**
 - `$collection` (string): Collection name
 - `$files` (array): Array of UploadedFile instances
-- `$metadata` (array|null): Optional metadata applied to all files
+- `$options` (array): Optional upload options (same as `attach()`)
+
+**Options:**
+- `expires_at` (Carbon|string|null): Expiration date/time for all files
 
 **Returns:** `Collection<File>` - Collection of created files
 
@@ -281,19 +297,21 @@ public function attachMany(
 // Upload multiple files
 $files = $post->attachMany('gallery', $request->file('images'));
 
-// With metadata
-$files = $product->attachMany('photos', $uploads, [
-    'uploaded_by' => auth()->id(),
+// With expiration (applied to all files)
+$files = $user->attachMany('temp_uploads', $uploads, [
+    'expires_at' => now()->addHours(24),
 ]);
 
 // Iterate results
 foreach ($files as $file) {
     echo $file->url();
+    echo $file->expires_at; // All have same expiration
 }
 ```
 
 **Throws:**
 - `InvalidCollectionException` - If collection doesn't allow multiple files
+- `FileUploadException` - If any upload fails
 
 ### replace()
 
@@ -302,23 +320,26 @@ Replace an existing file in a collection.
 ```php
 public function replace(
     string $collection,
-    UploadedFile|string $file,
-    ?int $fileId = null
+    UploadedFile $file,
+    array $options = []
 ): File
 ```
 
 **Parameters:**
 - `$collection` (string): Collection name
-- `$file` (UploadedFile|string): New file
-- `$fileId` (int|null): Specific file ID to replace (optional)
+- `$file` (UploadedFile): New file
+- `$options` (array): Optional upload options (same as `attach()`)
+
+**Options:**
+- `expires_at` (Carbon|string|null): Expiration date/time for the new file
 
 **Returns:** `File` - New file model
 
 **Behavior:**
-- Deletes old file(s) from storage
+- Deletes ALL old file(s) from the collection
+- Deletes files from storage
 - Creates new file record
-- For single-file collections, replaces the one file
-- For multi-file collections, specify `$fileId` or replaces first file
+- Works for both single-file and multi-file collections
 
 **Examples:**
 
@@ -326,10 +347,13 @@ public function replace(
 // Replace in single-file collection
 $newAvatar = $user->replace('avatar', $newImage);
 
-// Replace specific file in multi-file collection
-$newPhoto = $post->replace('gallery', $newImage, $oldFileId);
+// Replace all files in a collection
+$newThumbnail = $post->replace('thumbnails', $newImage);
 
-// Replace first file if no ID given
+// Replace with expiration
+$newFile = $post->replace('temporary', $uploadedFile, [
+    'expires_at' => now()->addWeek()
+]);
 $replaced = $model->replace('documents', $newDoc);
 ```
 
