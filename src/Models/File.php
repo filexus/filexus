@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property Carbon|null $expires_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property-read int $reference_count
  * @property-read Model $fileable
  */
 class File extends Model
