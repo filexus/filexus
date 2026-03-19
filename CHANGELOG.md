@@ -9,7 +9,8 @@ All notable changes to `filexus` will be documented in this file.
 
 ### Changed
 - Bumped minimum PHP requirement to `^8.3`.
-- Added `orchestra/testbench` `^11.0` to `require-dev` for Laravel 13 support.
+- Added support for Pest v4 and Pest Plugin Laravel v4 (required for Laravel 13).
+- Updated `orchestra/testbench`, `pestphp/pest`, and `pestphp/pest-plugin-laravel` to support multiple versions for Laravel 11-13 compatibility.
 
 ### Notes
 - This release may require PHP 8.3; ensure your environment is updated before upgrading.
