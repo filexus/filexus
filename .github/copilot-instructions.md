@@ -5,7 +5,7 @@
 **Package Name:** filexus/filexus
 **Namespace:** Filexus
 **Purpose:** Production-ready Laravel file attachment system for Eloquent models
-**Target:** Laravel 12+, PHP 8.2+
+**Target:** Laravel 11+, PHP 8.3+
 
 ## Code Quality Standards
 
@@ -14,7 +14,7 @@
 - Follow PSR-12 coding standards strictly
 - Use strict types: `declare(strict_types=1);` in all PHP files
 - Type hint everything: parameters, return types, properties
-- Use PHP 8.2+ features: readonly properties, constructor property promotion, enums where appropriate
+- Use PHP 8.3+ features: readonly properties, constructor property promotion, enums where appropriate
 - Never use `mixed` type unless absolutely necessary
 
 ### Documentation

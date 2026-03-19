@@ -9,7 +9,7 @@ All notable changes to `filexus` will be documented in this file.
 
 ### Changed
 - Bumped minimum PHP requirement to `^8.3`.
-- Update `orchestra/testbench` `^11.0` to `require-dev` for Laravel 13 support.
+- Added `orchestra/testbench` `^11.0` to `require-dev` for Laravel 13 support.
 
 ### Notes
 - This release may require PHP 8.3; ensure your environment is updated before upgrading.

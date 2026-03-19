@@ -6,8 +6,8 @@ This guide will walk you through installing and setting up Filexus in your Larav
 
 Before installing Filexus, ensure your system meets these requirements:
 
-- **PHP**: 8.2 or higher
-- **Laravel**: 12 or higher
+- **PHP**: 8.3 or higher
+- **Laravel**: 11 or higher
 - **Database**: MySQL 5.7+, PostgreSQL 9.6+, SQLite 3.8.8+, or SQL Server 2017+
 
 ## Install via Composer

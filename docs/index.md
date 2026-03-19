@@ -81,8 +81,8 @@ $post->detach('gallery', $fileId);
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 12+
+- PHP 8.3+
+- Laravel 11+
 
 ## Installation
 

@@ -23,8 +23,8 @@ A production-ready Laravel package that provides a simple and elegant file attac
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 12+
+- PHP 8.3+
+- Laravel 11+
 
 ## Installation
 
