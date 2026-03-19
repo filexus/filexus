@@ -4,6 +4,16 @@ All notable changes to `filexus` will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Support for Laravel 13: updated `illuminate/*` constraints to include `^13.0`.
+
+### Changed
+- Bumped minimum PHP requirement to `^8.3`.
+- Added `orchestra/testbench` `^11.0` to `require-dev` for Laravel 13 testing.
+
+### Notes
+- This release may require PHP 8.3; ensure your environment is updated before upgrading.
+
 ## [1.0.4] - 2026-03-12
 
 ### Added
